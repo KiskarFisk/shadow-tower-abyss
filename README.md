@@ -35,4 +35,4 @@ See the docstrings.
 
 ## Progress
 
-Game code: **575 of 1,843 functions matched (31%)**, but they are mostly the small ones, so that is 54.5 KB of 677 KB (**8.1% by size**). Sony SDK and middleware libraries are not counted.
+Game code: **588 of 1,843 functions matched (32%)**, but they are mostly the small ones, so that is 60.4 KB of 677 KB (**8.9% by size**). Sony SDK and middleware libraries are not counted.
