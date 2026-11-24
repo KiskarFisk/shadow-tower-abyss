@@ -65,6 +65,24 @@ def floats(src):
     return re.sub(r"(?<![\w.])(\d+\.\d*(?:e[-+]?\d+)?)(?![\w.])", r"\1f", src)
 
 
+SEXT = re.compile(r"\((s|u)64\) \(([^()]+?) << 0x(30|38|20)\) >> 0x\3")
+
+
+def narrow_variants(src):
+    """MWCC sign-extends short/char values with 64-bit shifts, which m2c prints literally on s64 values.
+    Variants: the shifts as casts with s64 -> s32, and additionally such parameters typed s16/s8."""
+    if not SEXT.search(src):
+        return [src]
+    width = {"30": "16", "38": "8", "20": "32"}
+    casts = SEXT.sub(lambda m: f"({m[1]}{width[m[3]]}) {m[2]}", src)
+    a = re.sub(r"\b([su])64\b", r"\g<1>32", casts)
+    narrowed = {m[2].strip(): f"{m[1]}{width[m[3]]}" for m in SEXT.finditer(src)}
+    head, _, body = a.partition("{")
+    for name, ty in narrowed.items():
+        head = re.sub(rf"\b[su]32 {name}\b", f"{ty} {name}", head)
+    return [src, a, head + "{" + body]
+
+
 def far_globals(src):
     """MWCC reaches a plain `extern T D_X;` through $gp; globals out of gp range must be arrays to get lui/%lo."""
     for m in re.finditer(r"^extern ([^;\[\]()]*?)\b(D_([0-9A-F]{8}));$", src, re.M):
@@ -105,7 +123,8 @@ def fix_casts(src):
 blocks, skipped = [], 0
 good = [(n, c) for n, c in res.items() if c.strip() and not re.search(r"M2C_(?!FIELD|BITWISE|UNK)|\?|second half", c)]
 with ThreadPoolExecutor(8) as ex:
-    blocks = list(ex.map(lambda nc: fix_casts(floats(far_globals(
-        '#include "m2c.h"\n' + re.sub(r"^#include .*\n", "", nc[1], flags=re.M)))), good))
+    pre = [v for n, c in good for v in narrow_variants(floats(far_globals(
+        '#include "m2c.h"\n' + re.sub(r"^#include .*\n", "", c, flags=re.M))))]
+    blocks = list(ex.map(fix_casts, pre))
 Path(out).write_text("\n// ---\n".join(blocks))
 print(f"{len(todo)} functions, {len(blocks)} candidates, {len(todo) - len(blocks)} skipped (unsupported m2c output)")
