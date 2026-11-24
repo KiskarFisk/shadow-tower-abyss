@@ -27,9 +27,10 @@ Matched functions live in `src/`, each file listed as a `c` subsegment in the ya
 
 For many small functions at once, `tools/batch.py` checks `// ---`-separated C candidates against the
 original and `apply` moves the matches into `src/`. `tools/gen.py` generates candidates for branch-free
-functions. See the docstrings.
+functions, and `tools/m2cgen.py` runs [m2c](https://github.com/matt-kempster/m2c) for the rest
+(its output uses `include/m2c.h`). See the docstrings.
 
 ## Progress
 
-Game code: **404 of 1,843 functions matched (22%)**, but they are the small ones, so that is about
+Game code: **438 of 1,843 functions matched (24%)**, but they are the small ones, so that is about
 11 KB of 703 KB (**1.6% by size**). Sony SDK and middleware libraries are not counted.

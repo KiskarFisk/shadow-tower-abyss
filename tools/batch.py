@@ -121,7 +121,7 @@ def apply(path):
     if cur:
         runs.append(cur)
     # split runs where two functions declare the same identifier differently
-    ident = lambda l: re.search(r"(\w+)\s*[(\[;]", l)[1]
+    ident = lambda l: (re.search(r"(\w+)\s*[(\[;]", l) or [l, l])[1]  # #include etc.: the line itself
     parts = []
     for run in runs:
         decl, cur = {}, []
