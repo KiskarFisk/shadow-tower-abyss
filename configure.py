@@ -13,8 +13,11 @@ BASENAME = "SLPS_252.17"
 # o64: o32 register names (what spimdisasm emits) with 64-bit regs, so ld/sd stay native.
 AS = "mips-linux-gnu-as -EL -march=r5900 -mabi=o64 -G0 -no-pad-sections -Iinclude"
 # 3.0.x builds report "2.4.1.01" like the game but, unlike 2.4-001213, save ra with sd
-# and move with daddu. -O3+ fills delay slots like the original.
-CC = "MWCIncludes=. wibo tools/mwcc/3.0.3-020716/mwccps2.exe -c -O4 -nostdinc -Iinclude -Isrc"
+# and move with daddu. 3.0b38-b52 with ",p" (optimize for speed) pad branch targets to
+# 8 bytes with a nop, as most game code does; 3.0.3 never does.
+CC = "MWCIncludes=. wibo tools/mwcc/3.0b52-030722/mwccps2.exe -c $flags -nostdinc -Iinclude -Isrc"
+# files the original built without ",p" (unaligned branch targets, no pad nops)
+NO_SPEED = {"src/game_0017ECD0.c"}
 
 if "--split" in sys.argv or not (ROOT / LD_SCRIPT).exists():
     subprocess.run([sys.executable, "-m", "splat", "split", YAML], cwd=ROOT, check=True)
@@ -34,6 +37,8 @@ lines = [
 for o in objs:
     src = o[len("build/"):-2]  # build/asm/80.s.o -> asm/80.s
     lines.append(f"build {o}: {'cc' if src.endswith('.c') else 'as'} {src}")
+    if src.endswith(".c"):
+        lines.append(f"  flags = {'-O4' if src in NO_SPEED else '-O4,p'}")
 lines += [
     f"build build/{BASENAME}.elf: ld | {' '.join(objs)} {LD_SCRIPT}\n  map = build/{BASENAME}.map",
     f"build build/main.bin: bin build/{BASENAME}.elf",

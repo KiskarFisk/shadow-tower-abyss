@@ -14,8 +14,8 @@ from pathlib import Path
 
 os.chdir(Path(__file__).resolve().parent.parent)
 YAML = Path("config/SLPS_252.17.yaml")
-CC = [os.path.expanduser("~/.local/bin/wibo"), "tools/mwcc/3.0.3-020716/mwccps2.exe",
-      "-c", "-O4", "-nostdinc", "-Iinclude", "-Isrc"]
+CC = [os.path.expanduser("~/.local/bin/wibo"), "tools/mwcc/3.0b52-030722/mwccps2.exe",
+      "-c", os.environ.get("FLAGS", "-O4,p"), "-nostdinc", "-Iinclude", "-Isrc"]  # FLAGS=-O4 for non-speed files
 EXE = Path("SLPS_252.17").read_bytes()
 off = lambda addr: addr - 0x100000 + 0x80
 
