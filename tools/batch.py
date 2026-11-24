@@ -109,9 +109,25 @@ def apply(path):
         cur, curf = ([(n, a)], f) if n in ok else ([], None)
     if cur:
         runs.append(cur)
+    # split runs where two functions declare the same identifier differently
+    ident = lambda l: re.search(r"(\w+)\s*[(\[;]", l)[1]
+    parts = []
+    for run in runs:
+        decl, cur = {}, []
+        for n, a in run:
+            lines = ok[n].splitlines()
+            k = next(j for j, l in enumerate(lines) if re.match(rf"^\S.*\b{n}\s*\([^;]*$", l))
+            mine = {ident(l): l for l in lines[:k] if l.strip() and not l.startswith("typedef")}
+            mine[n] = re.sub(r"\s*\{$", ";", lines[k])
+            if any(decl.get(i, l) != l for i, l in mine.items()):
+                parts.append(cur); decl, cur = {}, []
+            decl.update(mine)
+            cur.append((n, a))
+        parts.append(cur)
+    runs = parts
     starts = [a for _, a, *_ in fl]
     yaml = YAML.read_text()
-    for run in runs:
+    for run in reversed(runs):  # later runs first, so each run's end sees the next run's subsegment
         fname = f"game_{run[0][1]:08X}"
         header, bodies = [], []
         for n, _ in run:
