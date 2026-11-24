@@ -5,6 +5,7 @@
   batch.py asm NAME...           print the asm of functions
   batch.py check FILE.c          FILE holds blocks separated by `// ---`, each standalone C defining
                                  exactly one func_XXXXXXXX; compiles each, reports MATCH/FAIL
+  ALL=1 batch.py check FILE.c    also print every block's result (rank variants)
   batch.py apply FILE.c          check, then move every MATCH into src/ (contiguous runs share a file)
                                  and add c subsegments to the yaml
 """
@@ -94,6 +95,9 @@ def check(path):
     blocks = [b.strip() + "\n" for b in Path(path).read_text().split("// ---") if b.strip()]
     with ThreadPoolExecutor(8) as ex:
         res = list(ex.map(lambda b: check_block(b, syms, info), blocks))
+    if os.environ.get("ALL"):  # ALL=1: every block's result, to rank variants
+        for i, (n, r) in enumerate(res):
+            print(f"block {i}: {n}: {r}")
     # several blocks may try the same function; the first MATCH wins
     best = {}
     for (n, r), b in zip(res, blocks):
