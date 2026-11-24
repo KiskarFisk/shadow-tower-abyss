@@ -16,7 +16,7 @@ options:
   undefined_syms_auto_path: linker/undefined_syms_auto.txt
 
   find_file_boundaries: True
-  gp_value: 0
+  gp_value: 0x209B70  # crt0 SetupThread arg
   use_legacy_include_asm: False
   section_order: [".text", ".data", ".rodata", ".bss"]
   auto_link_sections: [".data", ".rodata", ".bss"]
@@ -33,6 +33,11 @@ segments:
     vram: 0x100000
     bss_size: 0x2BC300
     subsegments:
-      - [0x80, asm]
+      - [0x80, asm, crt0]          # 0x100000 entry
+      - [0x280, asm, sdk]          # 0x100200 Sony libs (graph, dma, mpeg, kernl, pad, sdr, cdvd, mc) + libc; ee-gcc, 8-aligned
+      - [0x28290, asm, game]       # 0x128210 MWCC game code, 16-aligned; main = func_0012BF40
+      - [0x2C7A0, c, game_0012C720]
+      - [0x2C7B0, asm, game_0012C730]
+      - [0xD3D60, asm, middleware] # 0x1D3CE0 mixed alignment; sound RPC (CallRpcSyncWait) etc.
       - [0xEF800, data]
   - [0x101F00]

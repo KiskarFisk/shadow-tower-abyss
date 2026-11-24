@@ -12,8 +12,8 @@ BASENAME = "SLPS_252.17"
 
 # o64: o32 register names (what spimdisasm emits) with 64-bit regs, so ld/sd stay native.
 AS = "mips-linux-gnu-as -EL -march=r5900 -mabi=o64 -G0 -no-pad-sections -Iinclude"
-# ponytail: optimisation flags are a guess until the first function matches.
-CC = "wibo tools/mwcc/2.4-001213/mwccps2.exe -c -O2 -nostdinc -Iinclude -Isrc"
+# -O3+ fills delay slots like the original; -O4 vs -O3 not yet distinguished.
+CC = "MWCIncludes=. wibo tools/mwcc/2.4-001213/mwccps2.exe -c -O4 -nostdinc -Iinclude -Isrc"
 
 if "--split" in sys.argv or not (ROOT / LD_SCRIPT).exists():
     subprocess.run([sys.executable, "-m", "splat", "split", YAML], cwd=ROOT, check=True)
@@ -26,7 +26,7 @@ lines = [
     f"rule as\n  command = {AS} -o $out $in\n",
     f"rule cc\n  command = {CC} -o $out $in\n",
     f"rule ld\n  command = mips-linux-gnu-ld -EL -T {LD_SCRIPT} -T linker/undefined_syms_auto.txt"
-    " -T linker/undefined_funcs_auto.txt -Map $map --no-check-sections --no-warn-rwx-segments -o $out\n",
+    " -T linker/undefined_funcs_auto.txt -Map $map --no-check-sections --no-warn-rwx-segments --no-warn-mismatch -o $out\n",
     "rule bin\n  command = mips-linux-gnu-objcopy -O binary $in $out\n",
     "rule check\n  command = sha1sum -c config/main.sha1 && touch $out\n",
 ]
