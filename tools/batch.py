@@ -72,6 +72,17 @@ def check_block(src, syms, info):
     orig = EXE[off(addr):off(addr) + size]
     if new == orig:
         return name, "MATCH"
+    if os.environ.get("DIFF"):  # DIFF=1: side-by-side disassembly of failures
+        def dis(b):
+            with tempfile.NamedTemporaryFile(suffix=".bin") as f:
+                f.write(b); f.flush()
+                out = subprocess.run(["mips-linux-gnu-objdump", "-D", "-z", "-b", "binary", "-m", "mips:5900", "-EL",
+                                      "-M", "gpr-names=32", f"--adjust-vma=0x{addr:x}", f.name],
+                                     capture_output=True, text=True).stdout
+            return [l.split("\t", 2)[-1].replace("\t", " ") for l in out.splitlines() if re.match(r"\s+[0-9a-f]+:", l)]
+        a, b = dis(orig), dis(new)
+        print(f"--- {name}\n" + "\n".join(f"{'  ' if x == y else '! '}{x:<34} {y}"
+                                           for x, y in zip(a + [""] * len(b), b + [""] * len(a)) if x or y))
     bad = [i for i in range(0, size, 4) if new[i:i + 4] != orig[i:i + 4]]
     return name, f"FAIL ({len(bad)}/{size // 4} words differ, first at +0x{bad[0]:x}; got {len(new)} bytes)" \
         if bad else f"FAIL (size {len(new)} vs {size})"
