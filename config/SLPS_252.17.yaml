@@ -1,0 +1,38 @@
+name: Shadow Tower Abyss (Japan)
+sha1: 283c43ed15120b1578869c536a1fa1ca05ca9732
+options:
+  basename: SLPS_252.17
+  target_path: SLPS_252.17
+  base_path: ..
+  platform: ps2
+  compiler: MWCCPS2
+
+  asm_path: asm
+  src_path: src
+  build_path: build
+  ld_script_path: linker/SLPS_252.17.ld
+  symbol_addrs_path: config/symbol_addrs.txt
+  undefined_funcs_auto_path: linker/undefined_funcs_auto.txt
+  undefined_syms_auto_path: linker/undefined_syms_auto.txt
+
+  find_file_boundaries: True
+  gp_value: 0
+  use_legacy_include_asm: False
+  section_order: [".text", ".data", ".rodata", ".bss"]
+  auto_link_sections: [".data", ".rodata", ".bss"]
+  string_encoding: SHIFT-JIS
+  rodata_string_guesser_level: 2
+  data_string_guesser_level: 2
+  named_regs_for_c_funcs: False
+  migrate_rodata_to_functions: False
+
+segments:
+  - name: main
+    type: code
+    start: 0x80
+    vram: 0x100000
+    bss_size: 0x2BC300
+    subsegments:
+      - [0x80, asm]
+      - [0xEF800, data]
+  - [0x101F00]

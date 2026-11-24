@@ -1,0 +1,11 @@
+SLPS_252.17
+IOPRP250.IMG
+*.OUT
+SYSTEM.CNF
+TARGET/
+asm/
+assets/
+build/
+linker/
+.splache
+__pycache__/
