@@ -59,6 +59,19 @@ with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(8) as ex:
         res = dict(ex.map(lambda t: run(t, sigs, tmp), todo))
 
 
+def far_globals(src):
+    """MWCC reaches a plain `extern T D_X;` through $gp; globals out of gp range must be arrays to get lui/%lo."""
+    for m in re.finditer(r"^extern ([^;\[\]()]*?)\b(D_([0-9A-F]{8}));$", src, re.M):
+        if abs(int(m[3], 16) - 0x209B70) < 0x8000:
+            continue
+        name = m[2]
+        body = src.replace(m[0], f"extern {m[1]}{name}[];")
+        body = re.sub(rf"&{name}\b", f"@@{name}", body)
+        body = re.sub(rf"(?<![@\w]){name}\b(?!\[\];)", f"{name}[0]", body)
+        src = body.replace(f"@@{name}", name)
+    return src
+
+
 def fix_casts(src):
     """Compile; cast the right-hand side of rejected implicit int/pointer conversions. Repeat."""
     for _ in range(6):
@@ -86,6 +99,7 @@ def fix_casts(src):
 blocks, skipped = [], 0
 good = [(n, c) for n, c in res.items() if c.strip() and not re.search(r"M2C_(?!FIELD|BITWISE|UNK)|\?|second half", c)]
 with ThreadPoolExecutor(8) as ex:
-    blocks = list(ex.map(lambda nc: fix_casts('#include "m2c.h"\n' + re.sub(r"^#include .*\n", "", nc[1], flags=re.M)), good))
+    blocks = list(ex.map(lambda nc: fix_casts(far_globals(
+        '#include "m2c.h"\n' + re.sub(r"^#include .*\n", "", nc[1], flags=re.M))), good))
 Path(out).write_text("\n// ---\n".join(blocks))
 print(f"{len(todo)} functions, {len(blocks)} candidates, {len(todo) - len(blocks)} skipped (unsupported m2c output)")
