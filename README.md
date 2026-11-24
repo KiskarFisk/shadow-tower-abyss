@@ -28,8 +28,11 @@ Matched functions live in `src/`, each file listed as a `c` subsegment in the ya
 For many small functions at once, `tools/batch.py` checks `// ---`-separated C candidates against the
 original and `apply` moves the matches into `src/`. `tools/gen.py` generates candidates for branch-free
 functions, and `tools/m2cgen.py` runs [m2c](https://github.com/matt-kempster/m2c) for the rest
-(its output uses `include/m2c.h`). See the docstrings.
+(its output uses `include/m2c.h`). For near-misses, `tools/perm_setup.py` prepares a
+[decomp-permuter](https://github.com/simonlindholm/decomp-permuter) directory; run the permuter with a
+`cpp` symlink to `tools/cpp_shim.sh` first on `PATH` (it stands in for the C preprocessor using MWCC's).
+See the docstrings.
 
 ## Progress
 
-Game code: **458 of 1,843 functions matched (25%)**, but they are mostly the small ones, so that is 14.4 KB of 677 KB (**2.1% by size**). Sony SDK and middleware libraries are not counted.
+Game code: **461 of 1,843 functions matched (25%)**, but they are mostly the small ones, so that is 14.7 KB of 677 KB (**2.2% by size**). Sony SDK and middleware libraries are not counted.
