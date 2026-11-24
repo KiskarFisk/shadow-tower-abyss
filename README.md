@@ -23,3 +23,15 @@ This repository contains no game data. You need your own copy of the game.
 Matched functions live in `src/`, each file listed as a `c` subsegment in the yaml between
 `asm` subsegments. Check a candidate with `tools/diff_func.sh src/file.c START END`
 (hex addresses), which diffs the compiled code against the original.
+
+For many small functions at once, `tools/batch.py` checks `// ---`-separated C candidates against the
+original and `apply` moves the matches into `src/`. `tools/gen.py` generates candidates for branch-free
+functions. See the docstrings.
+
+Known blocker: about 1,100 remaining functions have a `nop` before a branch target (e.g. after a call at
+the end of an `if` block) that no available MWCC build or flag reproduces.
+
+## Progress
+
+Game code: **393 of 1,843 functions matched (21%)**, but they are the small ones, so that is about
+11 KB of 703 KB (**1.6% by size**). Sony SDK and middleware libraries are not counted.
