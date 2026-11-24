@@ -12,8 +12,9 @@ This repository contains no game data. You need your own copy of the game.
 2. Linux/WSL: `sudo apt install binutils-mips-linux-gnu ninja-build python3-venv`,
    plus [wibo](https://github.com/decompals/wibo) on `PATH`.
 3. `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
-4. Put the decomp.me compiler `mwcps2-3.0.3-020716` in `tools/mwcc/3.0.3-020716/`.
-   (It reports "2.4.1.01" like the game; the older `2.4-001213` build does not match.)
+4. Put the decomp.me compiler `mwcps2-3.0b52-030722` in `tools/mwcc/3.0b52-030722/`.
+   The game is built with `-O4,p`: optimizing for speed pads branch targets to 8 bytes with a `nop`,
+   which only the 3.0b38–3.0b52 builds do. A few files use plain `-O4` (`NO_SPEED` in `configure.py`).
 5. `.venv/bin/python configure.py --split && ninja`
 
 `ninja` builds `build/main.bin` (the loaded segment) and checks its SHA-1 against `config/main.sha1`.
@@ -28,10 +29,7 @@ For many small functions at once, `tools/batch.py` checks `// ---`-separated C c
 original and `apply` moves the matches into `src/`. `tools/gen.py` generates candidates for branch-free
 functions. See the docstrings.
 
-Known blocker: about 1,100 remaining functions have a `nop` before a branch target (e.g. after a call at
-the end of an `if` block) that no available MWCC build or flag reproduces.
-
 ## Progress
 
-Game code: **393 of 1,843 functions matched (21%)**, but they are the small ones, so that is about
+Game code: **404 of 1,843 functions matched (22%)**, but they are the small ones, so that is about
 11 KB of 703 KB (**1.6% by size**). Sony SDK and middleware libraries are not counted.
