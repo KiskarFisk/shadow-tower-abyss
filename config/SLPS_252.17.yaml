@@ -36,6 +36,10 @@ segments:
       - [0x80, asm, crt0]          # 0x100000 entry
       - [0x280, asm, sdk]          # 0x100200 Sony libs (graph, dma, mpeg, kernl, pad, sdr, cdvd, mc) + libc; ee-gcc, 8-aligned
       - [0x28290, asm, game]       # 0x128210 MWCC game code, 16-aligned; main = func_0012BF40
+      - [0x2C0C0, c, game_0012C040]
+      - [0x2C0F0, asm, game_0012C070]
+      - [0x2C120, c, game_0012C0A0]
+      - [0x2C190, asm, game_0012C110]
       - [0x2C7A0, c, game_0012C720]
       - [0x2C7B0, asm, game_0012C730]
       - [0xD3D60, asm, middleware] # 0x1D3CE0 mixed alignment; sound RPC (CallRpcSyncWait) etc.

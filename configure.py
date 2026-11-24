@@ -12,8 +12,9 @@ BASENAME = "SLPS_252.17"
 
 # o64: o32 register names (what spimdisasm emits) with 64-bit regs, so ld/sd stay native.
 AS = "mips-linux-gnu-as -EL -march=r5900 -mabi=o64 -G0 -no-pad-sections -Iinclude"
-# -O3+ fills delay slots like the original; -O4 vs -O3 not yet distinguished.
-CC = "MWCIncludes=. wibo tools/mwcc/2.4-001213/mwccps2.exe -c -O4 -nostdinc -Iinclude -Isrc"
+# 3.0.x builds report "2.4.1.01" like the game but, unlike 2.4-001213, save ra with sd
+# and move with daddu. -O3+ fills delay slots like the original.
+CC = "MWCIncludes=. wibo tools/mwcc/3.0.3-020716/mwccps2.exe -c -O4 -nostdinc -Iinclude -Isrc"
 
 if "--split" in sys.argv or not (ROOT / LD_SCRIPT).exists():
     subprocess.run([sys.executable, "-m", "splat", "split", YAML], cwd=ROOT, check=True)
