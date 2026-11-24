@@ -59,6 +59,12 @@ with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(8) as ex:
         res = dict(ex.map(lambda t: run(t, sigs, tmp), todo))
 
 
+def floats(src):
+    """The game does single-precision math; m2c's doubles make MWCC call fptodp/dptofp."""
+    src = re.sub(r"\bf64\b", "f32", src)
+    return re.sub(r"(?<![\w.])(\d+\.\d*(?:e[-+]?\d+)?)(?![\w.])", r"\1f", src)
+
+
 def far_globals(src):
     """MWCC reaches a plain `extern T D_X;` through $gp; globals out of gp range must be arrays to get lui/%lo."""
     for m in re.finditer(r"^extern ([^;\[\]()]*?)\b(D_([0-9A-F]{8}));$", src, re.M):
@@ -99,7 +105,7 @@ def fix_casts(src):
 blocks, skipped = [], 0
 good = [(n, c) for n, c in res.items() if c.strip() and not re.search(r"M2C_(?!FIELD|BITWISE|UNK)|\?|second half", c)]
 with ThreadPoolExecutor(8) as ex:
-    blocks = list(ex.map(lambda nc: fix_casts(far_globals(
-        '#include "m2c.h"\n' + re.sub(r"^#include .*\n", "", nc[1], flags=re.M))), good))
+    blocks = list(ex.map(lambda nc: fix_casts(floats(far_globals(
+        '#include "m2c.h"\n' + re.sub(r"^#include .*\n", "", nc[1], flags=re.M)))), good))
 Path(out).write_text("\n// ---\n".join(blocks))
 print(f"{len(todo)} functions, {len(blocks)} candidates, {len(todo) - len(blocks)} skipped (unsupported m2c output)")
