@@ -30,8 +30,9 @@ subprocess.run(["mips-linux-gnu-as", "-EL", "-march=r5900", "-mabi=o64", "-G0", 
 
 (out / "compile.sh").write_text(f"""#!/bin/bash
 # usage: compile.sh IN.c -o OUT.o
+in=$(realpath "$1"); out=$(realpath -m "$3")
 cd {repo}
-MWCIncludes=. {os.path.expanduser('~/.local/bin/wibo')} tools/mwcc/3.0b52-030722/mwccps2.exe -c {flags} -nostdinc -o "$3" "$1"
+MWCIncludes=. {os.path.expanduser('~/.local/bin/wibo')} tools/mwcc/3.0b52-030722/mwccps2.exe -c {flags} -nostdinc -o "$out" "$in"
 """)
 (out / "compile.sh").chmod(0o755)
 (out / "settings.toml").write_text(f'func_name = "{func}"\ncompiler_type = "mwcc"\n')
