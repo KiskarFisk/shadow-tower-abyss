@@ -130,12 +130,17 @@ def apply(path):
             k = next(j for j, l in enumerate(lines) if re.match(rf"^\S.*\b{n}\s*\([^;]*$", l))
             mine = {ident(l): l for l in lines[:k] if l.strip() and not l.startswith("typedef")}
             mine[n] = re.sub(r"\s*\{$", ";", lines[k])
+            # multi-line definitions (structs, inline functions) can't be merged line by line: own file
+            multi = any("{" in l for l in lines[:k])
+            if multi:
+                parts += [cur, [(n, a)]]; decl, cur = {}, []
+                continue
             if any(decl.get(i, l) != l for i, l in mine.items()):
                 parts.append(cur); decl, cur = {}, []
             decl.update(mine)
             cur.append((n, a))
         parts.append(cur)
-    runs = parts
+    runs = [p for p in parts if p]
     starts = [a for _, a, *_ in fl]
     yaml = YAML.read_text()
     for run in reversed(runs):  # later runs first, so each run's end sees the next run's subsegment
