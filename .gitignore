@@ -9,3 +9,7 @@ build/
 linker/
 .splache
 __pycache__/
+tools/mwcc/
+build.ninja
+.ninja_*
+.venv/
