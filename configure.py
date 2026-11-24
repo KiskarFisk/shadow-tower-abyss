@@ -17,7 +17,8 @@ AS = "mips-linux-gnu-as -EL -march=r5900 -mabi=o64 -G0 -no-pad-sections -Iinclud
 # 8 bytes with a nop, as most game code does; 3.0.3 never does.
 CC = "MWCIncludes=. wibo tools/mwcc/3.0b52-030722/mwccps2.exe -c $flags -nostdinc -Iinclude -Isrc"
 # files the original built without ",p" (unaligned branch targets, no pad nops)
-NO_SPEED = {"src/game_0017ECD0.c"}
+NO_SPEED = {"src/game_0017ECD0.c", "src/game_001B19A0.c", "src/game_001C9FB0.c",
+            "src/game_0013ECA0.c"}
 
 if "--split" in sys.argv or not (ROOT / LD_SCRIPT).exists():
     subprocess.run([sys.executable, "-m", "splat", "split", YAML], cwd=ROOT, check=True)
