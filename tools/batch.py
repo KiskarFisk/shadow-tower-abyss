@@ -175,6 +175,15 @@ elif cmd == "asm":
         if n in want:
             print(f"== {n} 0x{s:x}")
             print(re.sub(r"/\* \w+ \w+ \w+ \*/  ", "", t).rstrip())
+elif cmd == "progress":  # README progress line, from build/src objects vs remaining asm
+    done = [int(l.split()[1], 16) for o in Path("build/src").glob("*.o")
+            for l in subprocess.run(["mips-linux-gnu-nm", "-S", str(o)], capture_output=True, text=True).stdout.splitlines()
+            if " T func_" in l]
+    left = [s for _, _, s, _, _ in funcs()]
+    n, t, b, bt = len(done), len(done) + len(left), sum(done), sum(done) + sum(left)
+    print(f"Game code: **{n:,} of {t:,} functions matched ({100 * n / t:.0f}%)**, but they are mostly the small ones, "
+          f"so that is {b / 1024:.1f} KB of {bt / 1024:.0f} KB (**{100 * b / bt:.1f}% by size**). "
+          "Sony SDK and middleware libraries are not counted.")
 elif cmd == "check":
     check(sys.argv[2])
 elif cmd == "apply":

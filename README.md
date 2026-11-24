@@ -32,5 +32,4 @@ functions, and `tools/m2cgen.py` runs [m2c](https://github.com/matt-kempster/m2c
 
 ## Progress
 
-Game code: **438 of 1,843 functions matched (24%)**, but they are the small ones, so that is about
-11 KB of 703 KB (**1.6% by size**). Sony SDK and middleware libraries are not counted.
+Game code: **447 of 1,843 functions matched (24%)**, but they are mostly the small ones, so that is 13.4 KB of 677 KB (**2.0% by size**). Sony SDK and middleware libraries are not counted.
