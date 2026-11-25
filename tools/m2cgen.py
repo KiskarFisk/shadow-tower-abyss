@@ -58,9 +58,13 @@ def run(t, sigs, tmp):
 
 res = {}
 with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(8) as ex:
-    for _ in range(3):  # signatures settle after a couple of passes
+    for i in range(3):  # signatures settle after a couple of passes
         sigs = {n: p for c in res.values() for n, p in protos(c).items()}
         res = dict(ex.map(lambda t: run(t, sigs, tmp), todo))
+        if i == 0:
+            # Pass 0 guesses callee arg counts from registers. Later passes trust inferred signatures, which
+            # drop parameters a callee never reads, so a passed-through a0 vanishes from the call. Keep both.
+            first = res
 
 
 def floats(src):
@@ -100,6 +104,60 @@ def far_globals(src):
     return src
 
 
+SIZES = {"s8": 1, "u8": 1, "char": 1, "M2C_UNK8": 1, "s16": 2, "u16": 2, "M2C_UNK16": 2,
+         "s64": 8, "u64": 8, "M2C_UNK64": 8, "s128": 16, "u128": 16,
+         "s32": 4, "u32": 4, "f32": 4, "int": 4, "M2C_UNK": 4, "M2C_UNK32": 4}
+
+
+def pointee_sizes(src):
+    """{name: (pointee type, size)} for `extern T D[];` and `T *name` declarations/parameters."""
+    res = {}
+    for m in re.finditer(r"\bextern ([\w ]+?)\s*(\*?)\s*(\w+)\[\];", src):
+        t = m[1].replace("signed ", "s").replace("unsigned ", "u")
+        res[m[3]] = (m[1] + m[2], 4 if m[2] else SIZES.get(t))
+    for m in re.finditer(r"(?<![\w*])([A-Za-z_]\w*) (\*+)\s*(\w+)\s*[;,)]", src):
+        res[m[3]] = (m[1] + m[2][1:], 4 if len(m[2]) > 1 else SIZES.get(m[1]))
+    return {k: v for k, v in res.items() if v[1]}
+
+
+def close(s, i):
+    """Index of the parenthesis closing the one opened just before s[i]."""
+    depth = 1
+    while depth:
+        depth += {"(": 1, ")": -1}.get(s[i], 0)
+        i += 1
+    return i - 1
+
+
+def byte_offsets(src):
+    """m2c does byte arithmetic on pointers it has no element type for (`*(D + (i * 4))`, `p += 4`), which C
+    scales by the element size. Rewrite as indexing when the offset is a multiple of it, else via s8 *."""
+    sz = pointee_sizes(src)
+    out, i = [], 0
+    for m in re.finditer(r"\*\((\w+) \+ ", src):
+        if m.start() < i or m[1] not in sz:
+            continue
+        end = close(src, m.end())
+        e = src[m.end():end]
+        t, n = sz[m[1]]
+        k = re.fullmatch(r"\((.+) \* (0x[0-9A-Fa-f]+|\d+)\)", e)
+        if k and close(e, 1) == len(e) - 1 and int(k[2], 0) % n == 0:
+            q = int(k[2], 0) // n
+            new = f"{m[1]}[{k[1]}]" if q == 1 else f"{m[1]}[{k[1]} * {q}]"
+        elif n > 1:
+            new = f"*({t} *)((s8 *){m[1]} + {e})"
+        else:
+            continue
+        out += [src[i:m.start()], new]
+        i = end + 1
+    src = "".join(out) + src[i:]
+
+    def step(m):
+        k, n = int(m[4], 0), sz.get(m[2], (0, 0))[1]
+        return f"{m[1]}{m[2]} {m[3]}= {k // n};" if n > 1 and k % n == 0 else m[0]
+    return re.sub(r"^(\s*)(\w+) ([-+])= (0x[0-9A-Fa-f]+|\d+);", step, src, flags=re.M)
+
+
 def fix_casts(src):
     """Compile; cast the right-hand side of rejected implicit int/pointer conversions. Repeat."""
     for _ in range(6):
@@ -124,11 +182,13 @@ def fix_casts(src):
     return src
 
 
-blocks, skipped = [], 0
-good = [(n, c) for n, c in res.items() if c.strip() and not re.search(r"M2C_(?!FIELD|BITWISE|UNK)|\?|second half", c)]
+ok = lambda c: c.strip() and not re.search(r"M2C_(?!FIELD|BITWISE|UNK)|\?|second half", c)
+good = {(n, c) for r in (res, first) for n, c in r.items() if ok(c)}
 with ThreadPoolExecutor(8) as ex:
-    pre = [v for n, c in good for v in narrow_variants(floats(far_globals(
-        "".join(f'#include "{h}"\n' for h in ["m2c.h"] + HEADERS) + re.sub(r"^#include .*\n", "", c, flags=re.M))))]
+    pre = []
+    for n, c in sorted(good):
+        c = far_globals("".join(f'#include "{h}"\n' for h in ["m2c.h"] + HEADERS) + re.sub(r"^#include .*\n", "", c, flags=re.M))
+        pre += dict.fromkeys(v for s in dict.fromkeys([c, byte_offsets(c)]) for v in narrow_variants(floats(s)))
     blocks = list(ex.map(fix_casts, pre))
 Path(out).write_text("\n// ---\n".join(blocks))
-print(f"{len(todo)} functions, {len(blocks)} candidates, {len(todo) - len(blocks)} skipped (unsupported m2c output)")
+print(f"{len(todo)} functions, {len({n for n, _ in good})} with candidates, {len(blocks)} candidates")
