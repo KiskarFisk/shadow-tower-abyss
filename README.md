@@ -28,7 +28,7 @@ Matched functions live in `src/`, each file listed as a `c` subsegment in the ya
 For many small functions at once, `tools/batch.py` checks `// ---`-separated C candidates against the
 original and `apply` moves the matches into `src/` (a switch jump table is carved out of the data blob as that file's `.rodata` subsegment). `tools/gen.py` generates candidates for branch-free
 functions, and `tools/m2cgen.py` runs [m2c](https://github.com/matt-kempster/m2c) for the rest
-(its output uses `include/m2c.h`). Shared structs live in `include/` (e.g. `actor.h`, the object behind the
+(its output uses `include/m2c.h`). Shared types live in `include/`: `common.h` (`Vec`, `Mtx`, `Flags8`), `obj3d.h` (the 0xD0-byte scene objects) and `actor.h` (the object behind the
 accessors at 0x13D1C0); list a header in `HEADERS` in `m2cgen.py` so m2c uses its types. For near-misses, `tools/perm_setup.py` prepares a
 [decomp-permuter](https://github.com/simonlindholm/decomp-permuter) directory; run the permuter with a
 `cpp` symlink to `tools/cpp_shim.sh` first on `PATH` (it stands in for the C preprocessor using MWCC's).

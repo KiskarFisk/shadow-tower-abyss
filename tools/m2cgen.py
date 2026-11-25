@@ -22,7 +22,7 @@ CTX_HEAD = "".join(f"typedef {t} {n};\n" for t, n in [
     ("double", "f64"), ("int", "M2C_UNK"), ("signed char", "M2C_UNK8"), ("short", "M2C_UNK16"),
     ("int", "M2C_UNK32"), ("long long", "M2C_UNK64")])
 # Shared struct headers: their types go into m2c's context (minus preprocessor lines) and every candidate includes them.
-HEADERS = ["actor.h"]
+HEADERS = ["common.h", "actor.h"]
 CTX_HEAD += "".join(re.sub(r"^#.*$", "", Path("include", h).read_text(), flags=re.M) for h in HEADERS)
 STRUCTS = set(re.findall(r"\}\s*([A-Z]\w*);", CTX_HEAD))
 OK_WORDS = set(TYPES) | STRUCTS | set("void char short int long float double unsigned signed const".split())
