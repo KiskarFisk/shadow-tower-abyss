@@ -190,6 +190,16 @@ elif cmd == "progress":  # README progress line, from build/src objects vs remai
             if " T func_" in l]
     left = [s for _, _, s, _, _ in funcs()]
     n, t, b, bt = len(done), len(done) + len(left), sum(done), sum(done) + sum(left)
+    # docs/progress.svg: one bar per metric; mid-grey text and track read on GitHub's light and dark themes
+    bars = [("Functions", n / t, f"{n:,} / {t:,}"), ("Code size", b / bt, f"{b / 1024:.1f} / {bt / 1024:.0f} KB")]
+    Path("docs/progress.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="560" height="64" font-family="sans-serif" font-size="13">\n'
+        + "".join(f'<text x="0" y="{y + 13}" fill="#888">{lbl}</text>'
+                  f'<rect x="80" y="{y}" width="300" height="18" rx="4" fill="#8884"/>'
+                  f'<rect x="80" y="{y}" width="{300 * f:.1f}" height="18" rx="4" fill="#3fb950"/>'
+                  f'<text x="390" y="{y + 13}" fill="#888">{100 * f:.1f}%  ({txt})</text>\n'
+                  for (lbl, f, txt), y in zip(bars, (6, 38)))
+        + "</svg>\n")
     print(f"Game code: **{n:,} of {t:,} functions matched ({100 * n / t:.0f}%)**, but they are mostly the small ones, "
           f"so that is {b / 1024:.1f} KB of {bt / 1024:.0f} KB (**{100 * b / bt:.1f}% by size**). "
           "Sony SDK and middleware libraries are not counted.")
