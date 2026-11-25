@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="560" height="64" font-family="sans-serif" font-size="13">
-<text x="0" y="19" fill="#888">Functions</text><rect x="80" y="6" width="300" height="18" rx="4" fill="#8884"/><rect x="80" y="6" width="131.1" height="18" rx="4" fill="#3fb950"/><text x="390" y="19" fill="#888">43.7%  (806 / 1,844)</text>
-<text x="0" y="51" fill="#888">Code size</text><rect x="80" y="38" width="300" height="18" rx="4" fill="#8884"/><rect x="80" y="38" width="68.7" height="18" rx="4" fill="#3fb950"/><text x="390" y="51" fill="#888">22.9%  (154.9 / 677 KB)</text>
+<text x="0" y="19" fill="#888">Functions</text><rect x="80" y="6" width="300" height="18" rx="4" fill="#8884"/><rect x="80" y="6" width="135.2" height="18" rx="4" fill="#3fb950"/><text x="390" y="19" fill="#888">45.1%  (831 / 1,844)</text>
+<text x="0" y="51" fill="#888">Code size</text><rect x="80" y="38" width="300" height="18" rx="4" fill="#8884"/><rect x="80" y="38" width="74.5" height="18" rx="4" fill="#3fb950"/><text x="390" y="51" fill="#888">24.8%  (168.0 / 677 KB)</text>
 </svg>
