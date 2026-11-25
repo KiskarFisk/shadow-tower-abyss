@@ -32,8 +32,8 @@ functions, and `tools/m2cgen.py` runs [m2c](https://github.com/matt-kempster/m2c
 accessors at 0x13D1C0); list a header in `HEADERS` in `m2cgen.py` so m2c uses its types. For near-misses, `tools/perm_setup.py` prepares a
 [decomp-permuter](https://github.com/simonlindholm/decomp-permuter) directory; run the permuter with a
 `cpp` symlink to `tools/cpp_shim.sh` first on `PATH` (it stands in for the C preprocessor using MWCC's).
-See the docstrings.
+See the docstrings. `docs/MATCHING.md` collects code-shape tricks that got functions to match.
 
 ## Progress
 
-Game code: **684 of 1,844 functions matched (37%)**, but they are mostly the small ones, so that is 85.2 KB of 677 KB (**12.6% by size**). Sony SDK and middleware libraries are not counted.
+Game code: **724 of 1,844 functions matched (39%)**, but they are mostly the small ones, so that is 107.1 KB of 677 KB (**15.8% by size**). Sony SDK and middleware libraries are not counted.
