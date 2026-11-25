@@ -21,7 +21,11 @@ CTX_HEAD = "".join(f"typedef {t} {n};\n" for t, n in [
     ("unsigned int", "u32"), ("long long", "s64"), ("unsigned long long", "u64"), ("float", "f32"),
     ("double", "f64"), ("int", "M2C_UNK"), ("signed char", "M2C_UNK8"), ("short", "M2C_UNK16"),
     ("int", "M2C_UNK32"), ("long long", "M2C_UNK64")])
-OK_WORDS = set(TYPES) | set("void char short int long float double unsigned signed const".split())
+# Shared struct headers: their types go into m2c's context (minus preprocessor lines) and every candidate includes them.
+HEADERS = ["actor.h"]
+CTX_HEAD += "".join(re.sub(r"^#.*$", "", Path("include", h).read_text(), flags=re.M) for h in HEADERS)
+STRUCTS = set(re.findall(r"\}\s*([A-Z]\w*);", CTX_HEAD))
+OK_WORDS = set(TYPES) | STRUCTS | set("void char short int long float double unsigned signed const".split())
 DEF = re.compile(r"^([A-Za-z_][^;{}()\n]*\b(func_[0-9A-F]{8})\s*\([^;{}\n]*\))[ \t]*\{?[ \t]*$", re.M)
 
 todo = []
@@ -124,7 +128,7 @@ blocks, skipped = [], 0
 good = [(n, c) for n, c in res.items() if c.strip() and not re.search(r"M2C_(?!FIELD|BITWISE|UNK)|\?|second half", c)]
 with ThreadPoolExecutor(8) as ex:
     pre = [v for n, c in good for v in narrow_variants(floats(far_globals(
-        '#include "m2c.h"\n' + re.sub(r"^#include .*\n", "", c, flags=re.M))))]
+        "".join(f'#include "{h}"\n' for h in ["m2c.h"] + HEADERS) + re.sub(r"^#include .*\n", "", c, flags=re.M))))]
     blocks = list(ex.map(fix_casts, pre))
 Path(out).write_text("\n// ---\n".join(blocks))
 print(f"{len(todo)} functions, {len(blocks)} candidates, {len(todo) - len(blocks)} skipped (unsupported m2c output)")
