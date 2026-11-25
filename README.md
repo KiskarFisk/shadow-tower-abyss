@@ -39,4 +39,4 @@ with notes on what still differs. `tools/order_search.py` brute-forces declarati
 
 ![Progress](docs/progress.svg)
 
-Game code: **918 of 1,844 functions matched (50%)**, but they are mostly the small ones, so that is 224.8 KB of 677 KB (**33.2% by size**). Sony SDK and middleware libraries are not counted.
+Game code: **967 of 1,844 functions matched (52%)**, but they are mostly the small ones, so that is 274.9 KB of 677 KB (**40.6% by size**). Sony SDK and middleware libraries are not counted.
