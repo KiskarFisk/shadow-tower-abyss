@@ -20,15 +20,21 @@ CC = "MWCIncludes=. wibo tools/mwcc/3.0b52-030722/mwccps2.exe -c $flags -nostdin
 NO_SPEED = {"src/game_0017ECD0.c", "src/game_001B19A0.c", "src/game_001C9FB0.c",
             "src/game_0013ECA0.c", "src/game_0013E220.c"}
 
-if "--split" in sys.argv or not (ROOT / LD_SCRIPT).exists():
-    # splat never deletes asm for functions that became C; stale files skew progress and m2cgen
-    for f in (ROOT / "asm").glob("*.s"):
-        f.unlink()
+split = "--split" in sys.argv or not (ROOT / LD_SCRIPT).exists()
+if split:
     subprocess.run([sys.executable, "-m", "splat", "split", YAML], cwd=ROOT, check=True)
 
 # The splat linker script is the source of truth for which objects exist.
 objs = re.findall(r"(build/\S+?\.o)\(", (ROOT / LD_SCRIPT).read_text())
 objs = list(dict.fromkeys(objs))
+
+if split:
+    # splat never deletes asm for functions that became C; stale files skew progress and m2cgen.
+    # Delete after splitting, so asm/ is never empty while something else reads it.
+    live = {o[len("build/"):-len(".o")] for o in objs}
+    for f in (ROOT / "asm").glob("*.s"):
+        if f"asm/{f.name}" not in live:
+            f.unlink()
 
 lines = [
     f"rule as\n  command = {AS} -o $out $in\n",
