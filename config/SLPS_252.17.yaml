@@ -21,7 +21,7 @@ options:
   section_order: [".text", ".data", ".rodata", ".bss"]
   auto_link_sections: [".data", ".rodata", ".bss"]
   string_encoding: SHIFT-JIS
-  rodata_string_guesser_level: 2
+  rodata_string_guesser_level: 0  # SJIS strings would be re-encoded as UTF-8; the rodata blob stays raw words
   data_string_guesser_level: 2
   named_regs_for_c_funcs: False
   migrate_rodata_to_functions: False
@@ -32,6 +32,7 @@ segments:
     start: 0x80
     vram: 0x100000
     bss_size: 0x2BC300
+    subalign: null  # sections keep their own alignment (code 16, data pieces 4), so jump tables can sit mid-blob
     subsegments:
       - [0x80, asm, crt0]          # 0x100000 entry
       - [0x280, asm, sdk]          # 0x100200 Sony libs (graph, dma, mpeg, kernl, pad, sdr, cdvd, mc) + libc; ee-gcc, 8-aligned
@@ -83,6 +84,7 @@ segments:
       - [0x2DB10, asm, game_0012DA90]
       - [0x2E6C0, c, game_0012E640]
       - [0x2E730, asm, game_0012E6B0]
+      - [0x2EDE0, c, game_0012ED60]
       - [0x2EFC0, c, game_0012EF40]
       - [0x2F170, asm, game_0012F0F0]
       - [0x2F420, c, game_0012F3A0]
@@ -475,6 +477,8 @@ segments:
       - [0x651B0, c, game_00165130]
       - [0x651D0, c, game_00165150]
       - [0x652E0, asm, game_00165260]
+      - [0x65480, c, game_00165400]
+      - [0x65640, asm, game_001655C0]
       - [0x66E20, c, game_00166DA0]
       - [0x67000, c, game_00166F80]
       - [0x67010, asm, game_00166F90]
@@ -950,7 +954,8 @@ segments:
       - [0xBD3D0, c, game_001BD350]
       - [0xBD560, asm, game_001BD4E0]
       - [0xBE410, c, game_001BE390]
-      - [0xBE590, asm, game_001BE510]
+      - [0xBE590, c, game_001BE510]
+      - [0xBE830, asm, game_001BE7B0]
       - [0xC06E0, c, game_001C0660]
       - [0xC08E0, c, game_001C0860]
       - [0xC0A90, asm, game_001C0A10]
@@ -998,7 +1003,8 @@ segments:
       - [0xCA070, c, game_001C9FF0]
       - [0xCA240, asm, game_001CA1C0]
       - [0xCA330, c, game_001CA2B0]
-      - [0xCA350, asm, game_001CA2D0]
+      - [0xCA350, c, game_001CA2D0]
+      - [0xCA520, asm, game_001CA4A0]
       - [0xCA770, c, game_001CA6F0]
       - [0xCA780, c, game_001CA700]
       - [0xCA8E0, c, game_001CA860]
@@ -1042,5 +1048,13 @@ segments:
       - [0xD2AF0, c, game_001D2A70]
       - [0xD2B00, asm, game_001D2A80]
       - [0xD3D60, asm, middleware] # 0x1D3CE0 mixed alignment; sound RPC (CallRpcSyncWait) etc.
-      - [0xEF800, data]
+      - [0xEF800, rodata]
+      - [0xFAC20, .rodata, game_0012ED60]
+      - [0xFAC38, rodata]
+      - [0xFB890, .rodata, game_00165400]
+      - [0xFB8AC, rodata]
+      - [0xFDB80, .rodata, game_001BE510]
+      - [0xFDBC0, rodata]
+      - [0xFDCD0, .rodata, game_001CA2D0]
+      - [0xFDD14, rodata]
   - [0x101F00]

@@ -26,7 +26,7 @@ Matched functions live in `src/`, each file listed as a `c` subsegment in the ya
 (hex addresses), which diffs the compiled code against the original.
 
 For many small functions at once, `tools/batch.py` checks `// ---`-separated C candidates against the
-original and `apply` moves the matches into `src/`. `tools/gen.py` generates candidates for branch-free
+original and `apply` moves the matches into `src/` (a switch jump table is carved out of the data blob as that file's `.rodata` subsegment). `tools/gen.py` generates candidates for branch-free
 functions, and `tools/m2cgen.py` runs [m2c](https://github.com/matt-kempster/m2c) for the rest
 (its output uses `include/m2c.h`). Shared structs live in `include/` (e.g. `actor.h`, the object behind the
 accessors at 0x13D1C0); list a header in `HEADERS` in `m2cgen.py` so m2c uses its types. For near-misses, `tools/perm_setup.py` prepares a
@@ -39,4 +39,4 @@ with notes on what still differs. `tools/order_search.py` brute-forces declarati
 
 ![Progress](docs/progress.svg)
 
-Game code: **788 of 1,844 functions matched (43%)**, but they are mostly the small ones, so that is 145.6 KB of 677 KB (**21.5% by size**). Sony SDK and middleware libraries are not counted.
+Game code: **792 of 1,844 functions matched (43%)**, but they are mostly the small ones, so that is 147.6 KB of 677 KB (**21.8% by size**). Sony SDK and middleware libraries are not counted.

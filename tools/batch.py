@@ -7,7 +7,8 @@
                                  exactly one func_XXXXXXXX; compiles each, reports MATCH/FAIL
   ALL=1 batch.py check FILE.c    also print every block's result (rank variants)
   batch.py apply FILE.c          check, then move every MATCH into src/ (contiguous runs share a file)
-                                 and add c subsegments to the yaml
+                                 and add c subsegments to the yaml; a function with a switch jump table
+                                 gets its own file, and its table becomes that file's .rodata subsegment
 """
 import os, re, subprocess, sys, tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -19,6 +20,7 @@ CC = [os.path.expanduser("~/.local/bin/wibo"), "tools/mwcc/3.0b52-030722/mwccps2
       "-c", os.environ.get("FLAGS", "-O4,p"), "-nostdinc", "-Iinclude", "-Isrc"]  # FLAGS=-O4 for non-speed files
 EXE = Path("SLPS_252.17").read_bytes()
 off = lambda addr: addr - 0x100000 + 0x80
+JT = {}  # name -> (jump table addr, .rodata size) of matched functions with a switch table
 
 
 def funcs():
@@ -43,7 +45,7 @@ def check_block(src, syms, info):
     name = name[1]
     if name not in info:
         return name, "not an unmatched game function"
-    addr, size = info[name]
+    addr, size, jt = info[name]
     with tempfile.TemporaryDirectory() as t:
         Path(t, "a.c").write_text(src)
         r = subprocess.run(CC + ["-o", f"{t}/a.o", f"{t}/a.c"], capture_output=True, text=True,
@@ -62,7 +64,8 @@ def check_block(src, syms, info):
         Path(t, "s.ld").write_text("".join(f"{n} = 0x{v};\n" for n, v in syms.items()
                                            if n not in defs and n[:2] in ("fu", "D_", "en")))
         Path(t, "a.ld").write_text(f"_gp = 0x209B70;\nSECTIONS {{ .text 0x{addr - fo:x} : {{ *(.text) }}"
-                                   " /DISCARD/ : { *(*) } }\n")
+                                   + (f" .rodata 0x{jt:x} : {{ *(.rodata) }}" if jt else "")
+                                   + " /DISCARD/ : { *(*) } }\n")
         r = subprocess.run(["mips-linux-gnu-ld", "-EL", "--no-warn-mismatch", "--no-warn-rwx-segments", "-e", "0",
                             "-T", f"{t}/a.ld", "-T", f"{t}/s.ld", "-o", f"{t}/a.elf", f"{t}/a.o"],
                            capture_output=True, text=True)
@@ -70,6 +73,12 @@ def check_block(src, syms, info):
             return name, "link error: " + r.stderr.strip()
         subprocess.run(["mips-linux-gnu-objcopy", "-O", "binary", "-j", ".text", f"{t}/a.elf", f"{t}/a.bin"])
         new = Path(t, "a.bin").read_bytes()[fo:fo + size]
+        if jt:  # switch jump table: the compiled .rodata must equal the original table
+            subprocess.run(["mips-linux-gnu-objcopy", "-O", "binary", "-j", ".rodata", f"{t}/a.elf", f"{t}/r.bin"])
+            rod = Path(t, "r.bin").read_bytes() if Path(t, "r.bin").exists() else b""
+            if new == EXE[off(addr):off(addr) + size] and (not rod or rod != EXE[off(jt):off(jt) + len(rod)]):
+                return name, "FAIL (code matches, jump table .rodata differs)"
+            JT[name] = (jt, len(rod))
     orig = EXE[off(addr):off(addr) + size]
     if new == orig:
         return name, "MATCH"
@@ -90,7 +99,8 @@ def check_block(src, syms, info):
 
 
 def check(path):
-    info = {n: (a, s) for n, a, s, _, _ in funcs()}
+    info = {n: (a, s, min([int(j, 16) for j in re.findall(r"jtbl_([0-9A-F]{8})", t)], default=0))
+            for n, a, s, _, t in funcs()}
     syms = elf_syms()
     blocks = [b.strip() + "\n" for b in Path(path).read_text().split("// ---") if b.strip()]
     with ThreadPoolExecutor(8) as ex:
@@ -135,7 +145,7 @@ def apply(path):
             mine = {ident(l): l for l in lines[:k] if l.strip() and not l.startswith("typedef")}
             mine[n] = re.sub(r"\s*\{$", ";", lines[k])
             # multi-line definitions (structs, inline functions) can't be merged line by line: own file
-            multi = any("{" in l for l in lines[:k])
+            multi = any("{" in l for l in lines[:k]) or n in JT  # a table's .rodata needs its own file
             if multi:
                 parts += [cur, [(n, a)]]; decl, cur = {}, []
                 continue
@@ -168,6 +178,19 @@ def apply(path):
             yaml = yaml[:prev.start()] + new + yaml[prev.end():]
         else:
             yaml = yaml[:prev.end()] + new + yaml[prev.end():]
+        if run[0][0] in JT:  # carve the jump table out of the data blob as this file's .rodata
+            jt, n = JT[run[0][0]]
+            js, je = off(jt), off(jt) + n
+            segs = [(int(m[1], 16), m) for m in re.finditer(r"      - \[(0x[0-9A-F]+), ([.\w]+).*\n", yaml)]
+            prev = max((x for x in segs if x[0] <= js), key=lambda x: x[0])[1]
+            assert prev[2] == "rodata", f"{fname}: table at 0x{jt:X} is not inside a rodata subsegment"
+            new = f"      - [0x{js:X}, .rodata, {fname}]\n"
+            if je not in [s for s, _ in segs]:
+                new += f"      - [0x{je:X}, rodata]\n"
+            if int(prev[1], 16) == js:
+                yaml = yaml[:prev.start()] + new + yaml[prev.end():]
+            else:
+                yaml = yaml[:prev.end()] + new + yaml[prev.end():]
     YAML.write_text(yaml)
     print(f"applied {len(ok)} functions in {len(runs)} files")
 
