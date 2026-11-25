@@ -2,14 +2,14 @@
 # Compile a C file and diff its code against the original exe.
 # usage: tools/diff_func.sh src/file.c START_HEX END_HEX   (e.g. 12C0A0 12C110)
 # Needs a prior `ninja` build (symbol addresses come from build/SLPS_252.17.elf).
-# Env: MW=<compiler dir under tools/mwcc> (default 3.0.3-020716), FLAGS (default -O4).
+# Env: MW=<compiler dir under tools/mwcc> (default 3.0b52-030722), FLAGS (default -O4,p; -O4 for NO_SPEED files).
 set -e
 cd "$(dirname "$0")/.."
 export PATH=$HOME/.local/bin:$PATH MWCIncludes=.
 T=$(mktemp -d); trap 'rm -rf $T' EXIT
 s=$((0x$2)); e=$((0x$3))
 
-wibo tools/mwcc/${MW:-3.0.3-020716}/mwccps2.exe -c ${FLAGS:--O4} -nostdinc -Iinclude -Isrc -o $T/a.o "$1" 2>&1 \
+wibo tools/mwcc/${MW:-3.0b52-030722}/mwccps2.exe -c ${FLAGS:--O4,p} -nostdinc -Iinclude -Isrc -o $T/a.o "$1" 2>&1 \
   | grep -vE "MWCIncludes|Usage Warning" || true
 
 # Resolve every symbol to its address in the matching build, except those this file defines.
