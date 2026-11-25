@@ -21,6 +21,9 @@ NO_SPEED = {"src/game_0017ECD0.c", "src/game_001B19A0.c", "src/game_001C9FB0.c",
             "src/game_0013ECA0.c"}
 
 if "--split" in sys.argv or not (ROOT / LD_SCRIPT).exists():
+    # splat never deletes asm for functions that became C; stale files skew progress and m2cgen
+    for f in (ROOT / "asm").glob("*.s"):
+        f.unlink()
     subprocess.run([sys.executable, "-m", "splat", "split", YAML], cwd=ROOT, check=True)
 
 # The splat linker script is the source of truth for which objects exist.
