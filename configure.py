@@ -18,7 +18,7 @@ AS = "mips-linux-gnu-as -EL -march=r5900 -mabi=o64 -G0 -no-pad-sections -Iinclud
 CC = "MWCIncludes=. wibo tools/mwcc/3.0b52-030722/mwccps2.exe -c $flags -nostdinc -Iinclude -Isrc"
 # files the original built without ",p" (unaligned branch targets, no pad nops)
 NO_SPEED = {"src/game_0017ECD0.c", "src/game_001B19A0.c", "src/game_001C9FB0.c",
-            "src/game_0013ECA0.c"}
+            "src/game_0013ECA0.c", "src/game_0013E220.c"}
 
 if "--split" in sys.argv or not (ROOT / LD_SCRIPT).exists():
     # splat never deletes asm for functions that became C; stale files skew progress and m2cgen
